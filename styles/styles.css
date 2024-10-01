@@ -54,7 +54,7 @@ body {
 }
 
 .container h1{
-    font-family: 'Playfair Display', serif; /* Usa la fuente Playfair Display */
+    font-family: 'Playfair Display', serif; 
     font-style: italic;
     font-size: 70px;
 }
