@@ -1,60 +1,127 @@
-const products = [
-    { id: 1, name: 'Corte diagonal', price: 4500, image: 'Corte diagonal.jpg' }, 
-    { id: 2, name: 'Vela de soja (Ambar Vidrio con tapa)', price: 6500,image: 'Vela de soja (Ambar Vidrio con tapa).jpg' },
-    { id: 3, name: 'Colgante Difusor para Auto', price: 900, image: 'Colgante auto.jpg'  },
-];
+let cart = JSON.parse(localStorage.getItem('cart')) || []; 
+let products = [];
 
-const cart = [];
-const totalElement = document.getElementById('total');
+async function fetchProducts() {
+    try {
+        const response = await fetch('data/products.json');
+        if (!response.ok) throw new Error('Error al cargar el archivo JSON');
 
+        products = await response.json();
+        console.log('Productos cargados:', products);
+        displayProducts(products);
+    } catch (error) {
+        console.error(error);
+        showToast('No se pudieron cargar los productos. Intenta de nuevo más tarde.', '#FF5733');
+    }
+}
 
-function displayProducts() {
+function displayProducts(products) {
     const productList = document.getElementById('product-list');
+    productList.innerHTML = '';
+
+    if (!Array.isArray(products)) {
+        console.error('La variable products no es un array:', products);
+        return;
+    }
+
     products.forEach(product => {
-        const productDiv = document.createElement('div');
-        productDiv.className = 'product';
-        productDiv.innerHTML = `
-            <h3>${product.name}</h3>
-            <p>Precio: $${product.price}</p>
-            <button onclick="addToCart(${product.id})">Agregar al Carrito</button>
-        `;
+        const productDiv = createProductElement(product);
         productList.appendChild(productDiv);
     });
 }
 
+function createProductElement(product) {
+    const productDiv = document.createElement('div');
+    productDiv.className = 'product';
+    productDiv.innerHTML = `
+        <h3>${product.name}</h3>
+        <p>Precio: $${product.price}</p>
+        <p>Stock disponible: ${product.stock}</p>
+        <img src="${product.image}" alt="${product.name}" class="product-image">
+        <input type="number" id="quantity-${product.id}" min="1" max="${product.stock}" value="1" />
+        <button id="add-to-cart-${product.id}" onclick="addToCart(${product.id})">Agregar al Carrito</button>
+    `;
+    return productDiv;
+}
 
 function addToCart(productId) {
     const product = products.find(p => p.id === productId);
-    cart.push(product);
-    updateCart();
+    const quantityInput = document.getElementById(`quantity-${productId}`);
+    const quantity = parseInt(quantityInput.value);
+
+    if (product) {
+        const existingProduct = cart.find(item => item.id === product.id);
+        if (existingProduct) {
+            const newQuantity = existingProduct.quantity + quantity;
+            if (newQuantity <= product.stock) {
+                existingProduct.quantity = newQuantity;
+                console.log('Cantidad actualizada en el carrito:', product);
+            } else {
+                console.log('No se puede agregar más unidades que el stock disponible.');
+                showToast('No se puede agregar más unidades que el stock disponible.', '#FF5733');
+            }
+        } else {
+            if (quantity <= product.stock) {
+                cart.push({ ...product, quantity }); 
+                console.log('Producto agregado al carrito:', product);
+            } else {
+                console.log('No se puede agregar más unidades que el stock disponible.');
+                showToast('No se puede agregar más unidades que el stock disponible.', '#FF5733');
+            }
+        }
+
+        updateLocalStorage(); 
+        renderCart(); 
+    } else {
+        console.error('Producto no encontrado:', productId);
+    }
 }
 
+function removeFromCart(productId) {
+    cart = cart.filter(item => item.id !== productId); 
+    updateLocalStorage(); 
+    renderCart(); 
+}
 
+function renderCart() {
+    const cartList = document.getElementById('cart-list'); 
+    if (!cartList) {
+        console.error('El elemento con ID "cart-list" no se encontró en el DOM.');
+        return; 
+    }
+    
+    cartList.innerHTML = ''; 
 
-function updateCart() {
-    const cartDiv = document.getElementById('cart');
-    cartDiv.innerHTML = '';
-    let total = 0;
-
-    cart.forEach((item, index) => {
+    let total = 0; 
+    cart.forEach(item => {
         const cartItem = document.createElement('div');
-        cartItem.className = 'cart-item'; 
+        cartItem.className = 'cart-item';
         cartItem.innerHTML = `
             <img src="${item.image}" alt="${item.name}" class="cart-item-logo">
-            ${item.name} - $${item.price} <button onclick="removeFromCart(${index})">Eliminar</button>
+            <span>${item.name} - $${item.price} x ${item.quantity}</span> <!-- Muestra la cantidad -->
+            <button onclick="removeFromCart(${item.id})">Eliminar</button> <!-- Botón para eliminar -->
         `;
-        cartDiv.appendChild(cartItem);
-        total += item.price;
+        cartList.appendChild(cartItem);
+        total += item.price * item.quantity; 
     });
 
-    totalElement.textContent = total;
+    document.getElementById('total').textContent = `Total: $${total}`; 
+}
+
+function updateLocalStorage() {
+    localStorage.setItem('cart', JSON.stringify(cart)); 
+}
+
+function showToast(message, backgroundColor) {
+    Toastify({
+        text: message,
+        duration: 3000,
+        gravity: "top",
+        position: 'right',
+        backgroundColor: backgroundColor,
+    }).showToast();
 }
 
 
-function removeFromCart(index) {
-    cart.splice(index, 1);
-    updateCart();
-}
-
-
-displayProducts();
+fetchProducts();
+renderCart(); 

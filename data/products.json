@@ -1,0 +1,23 @@
+[
+    {
+        "id": 1,
+        "name": "Corte diagonal",
+        "price": 4500,
+        "image": "./imagenes/Corte diagonal.jpg",
+        "stock": 5
+    },
+    {
+        "id": 2,
+        "name": "Vela de soja (Ambar Vidrio con tapa)",
+        "price": 6500,
+        "image": "./imagenes/Vela de soja (Ambar Vidrio con tapa).jpg",
+        "stock": 10
+    },
+    {
+        "id": 3,
+        "name": "Colgante Difusor para Auto",
+        "price": 900,
+        "image": "./imagenes/Colgante auto.jpg",
+        "stock": 3
+    }
+]
